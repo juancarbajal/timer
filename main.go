@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"os/exec"
@@ -22,24 +23,23 @@ func ExecuteCommand(command string, args string) string {
 
 // run ...
 func run(seconds int, command string, args string) {
-	ticker := time.NewTicker(1 * time.Millisecond)
-	done := make(chan bool)
-	go func() {
-		for {
-			if <-done {
-			} else {
-				_ = <-ticker.C
-				ExecuteCommand(command, args)
-			}
-		}
-	}()
+	for {
+		fmt.Println(ExecuteCommand(command, args))
+		time.Sleep(time.Duration(seconds) * time.Second)
+	}
 }
 
-func ReadArgs(args []string) (int, string, string) {
-	second, _ := strconv.Atoi(args[0])
+func ReadArgs(args []string) (int, string, string, error) {
+	second, err := strconv.Atoi(args[0])
+	if err != nil {
+		return 0, "", "", errors.New("second must be integer")
+	}
 	program := args[1]
+	if len(args) <= 2 {
+		return second, program, "", nil
+	}
 	programArgs := strings.Join(args[2:], " ")
-	return second, program, programArgs
+	return second, program, programArgs, nil
 }
 
 // main Programa principal
@@ -49,7 +49,10 @@ func main() {
 		fmt.Println("timer <seconds> <command> <params>")
 		os.Exit(1)
 	}
-	seconds, program, programArgs := ReadArgs(args[1:])
+	seconds, program, programArgs, err := ReadArgs(args[1:])
+	if err != nil {
+		fmt.Println(err.Error())
+		os.Exit(1)
+	}
 	run(seconds, program, programArgs)
-
 }
